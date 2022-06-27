@@ -1,0 +1,134 @@
+---
+# YAML Overlay Tool Instruction set
+commonOverlays:
+  - name: Set namespace for namespaced resources
+    query: metadata.namespace
+    value: guestbook-application  # +operator-builder:field:name=namespace,type=string
+    action: merge
+    onMissing:
+      action: inject
+    documentQuery:
+      - conditions:
+          - query: kind
+            value: Deployment
+      - conditions:
+          - query: kind
+            value: Service
+  - name: Pre-pend all labels and selectors on services
+    query:
+      - metadata.labels
+      - spec.selector
+    value:
+      app.kubernetes.io/%k: "%v"
+    action: merge
+    documentQuery:
+      - conditions:
+          - query: kind
+            value: Service
+  - name: Pre-pend all labels and selectors on deployments
+    query:
+      - metadata.labels
+      - spec.selector.matchLabels
+      - spec.template.metadata.labels
+    value:
+      app.kubernetes.io/%k: "%v"
+    action: merge
+    documentQuery:
+      - conditions:
+          - query: kind
+            value: Deployment
+yamlFiles:
+  - name: Guestbook application namespace
+    path: ../.source-manifests/guestbook-namespace.yaml
+    overlays:
+      - name: Add workload marker for configurable namespace
+        query: metadata.name
+        value: guestbook-application  # +operator-builder:field:name=namespace,type=string
+        action: merge
+  - name: Redis leader deployment
+    path: ../.source-manifests/redis-leader-deployment.yaml
+    overlays:
+      - name: Configurable replicas
+        query: spec.replicas
+        value: !!int "%v"  # +operator-builder:field:name=redisLeaderReplicas,default=1,type=int
+        action: merge
+      - name: Configurable container image
+        query: spec.template.spec.containers[?(@.name == 'leader')].image
+        value: "%v"  # +operator-builder:field:name=redisLeaderImage,type=string
+        action: merge
+      - name: Configurable port
+        query: spec.template.spec.containers[?(@.name == 'leader')].ports[0].containerPort
+        value: !!int "%v"  # +operator-builder:field:name=redisLeaderContainerPort,default=6379,type=int
+        action: merge
+  - name: Redis leader service
+    path: ../.source-manifests/redis-leader-service.yaml
+    overlays:
+      - name: Configurable targetPort
+        query: spec.ports[0].targetPort
+        value: !!int "%v"  # +operator-builder:field:name=redisLeaderContainerPort,default=6379,type=int
+        action: merge
+      - name: Configurable port
+        query: spec.ports[0].port
+        value: !!int "%v"  # +operator-builder:field:name=redisLeaderServicePort,default=6379,type=int
+        action: merge
+  - name: Redis follower deployment
+    path: ../.source-manifests/redis-follower-deployment.yaml
+    overlays:
+      - name: Configurable replicas
+        query: spec.replicas
+        value: !!int "%v"  # +operator-builder:field:name=redisFollowerReplicas,default=2,type=int
+        action: merge
+      - name: Configurable container image
+        query: spec.template.spec.containers[?(@.name == 'follower')].image
+        value: "%v"  # +operator-builder:field:name=redisFollowerImage,type=string
+        action: merge
+      - name: Configurable container port
+        query: spec.template.spec.containers[?(@.name == 'follower')].ports[0].containerPort
+        value: !!int "%v"  # +operator-builder:field:name=redisFollowerContainerPort,default=6379,type=int
+        action: merge
+  - name: Redis follower service
+    path: ../.source-manifests/redis-follower-service.yaml
+    overlays:
+      - name: Configurable targetPort
+        query: spec.ports[0]
+        value: 
+          targetPort: 6379  # +operator-builder:field:name=redisFollowerContainerPort,default=6379,type=int
+        action: merge
+      - name: Configurable port
+        query: spec.ports[0].port
+        value: !!int "%v"  # +operator-builder:field:name=redisFollowerServicePort,default=6379,type=int
+        action: merge
+  - name: Frontend deployment
+    path: ../.source-manifests/frontend-deployment.yaml
+    overlays:
+      - name: Configurable replicas
+        query: spec.replicas
+        value: !!int "%v"  # +operator-builder:field:name=guestBookReplicas,default=3,type=int
+        action: merge
+      - name: Configurable container image
+        query: spec.template.spec.containers[?(@.name == 'php-redis')].image
+        value: "%v"  # +operator-builder:field:name=guestBookImage,type=string
+        action: merge
+      - name: Configurable container port
+        query: spec.template.spec.containers[?(@.name == 'php-redis')].ports[0].containerPort
+        value: !!int "%v"  # +operator-builder:field:name=guestBookContainerPort,default=80,type=int
+        action: merge
+  - name: Frontend service
+    path: ../.source-manifests/frontend-service.yaml
+    overlays:
+      - name: Configurable targetPort
+        query: spec.ports[0]
+        value:
+          targetPort: 80  # +operator-builder:field:name=guestBookContainerPort,default=80,type=int
+        action: merge
+        onMissing:
+          action: inject
+      - name: Configurable port
+        query: spec.ports[0].port
+        value: !!int "%v"  # +operator-builder:field:name=guestBookServicePort,default=80,type=int
+        action: merge
+      - name: Add in service type
+        query: spec.type
+        value: LoadBalancer
+        onMissing:
+          action: inject

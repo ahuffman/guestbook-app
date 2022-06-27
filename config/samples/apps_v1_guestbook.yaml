@@ -1,0 +1,18 @@
+apiVersion: apps.demo.com/v1
+kind: Guestbook
+metadata:
+  name: guestbook-sample
+spec:
+  namespace: "guestbook-application"
+  redisLeaderReplicas: 1
+  redisLeaderImage: "docker.io/redis:6.0.5"
+  redisLeaderContainerPort: 6379
+  redisLeaderServicePort: 6379
+  redisFollowerReplicas: 2
+  redisFollowerImage: "gcr.io/google_samples/gb-redis-follower:v2"
+  redisFollowerContainerPort: 6379
+  redisFollowerServicePort: 6379
+  guestBookReplicas: 3
+  guestBookImage: "gcr.io/google_samples/gb-frontend:v5"
+  guestBookContainerPort: 80
+  guestBookServicePort: 80

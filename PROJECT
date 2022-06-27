@@ -1,0 +1,21 @@
+domain: demo.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+plugins:
+  operatorBuilder:
+    cliRootCommandName: gbkctl
+    workloadConfigPath: .source/workload.yaml
+projectName: guestbook-app-ref-implementation-for-operator-builder
+repo: guestbook-app
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: demo.com
+  group: apps
+  kind: Guestbook
+  path: guestbook-app/apis/apps/v1
+  version: v1
+version: "3"
